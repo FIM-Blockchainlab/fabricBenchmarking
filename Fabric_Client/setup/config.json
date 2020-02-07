@@ -1,0 +1,7 @@
+{
+    "gateway": "./network.json",
+    "userName": "User1@org1.example.com",
+    "MSPName": "Org1MSP",
+    "keyName": "priv_sk",
+    "collection": "all"
+}

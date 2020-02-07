@@ -22,16 +22,10 @@ async function test(){
     //initializing the contracts
     await bench.init().catch(err => {console.log(err)})
 
-    start = Date.now()
-    result = await bench.queryMatrixMultiplication(5)
-    console.log("QueryMatrixMultiplication:" + result)
-    console.log("elapsed time: " + (Date.now()-start))
-    console.log("")
-    console.log("=======================")
-    console.log("")
+    result = await bench.writeDataPrivate("5","x","all")
+    console.log(result)
+    process.exit()
 
-    await bench.close().catch(err => { console.log(err) })
-    console.log("Disconnected from fabric")
 }
 
 test()
