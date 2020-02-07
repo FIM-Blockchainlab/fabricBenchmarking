@@ -23,6 +23,10 @@ const userName = config.userName;
 const connector = require(__dirname + "/connector");
 const collection = config.collection;
 
+const bufferLocation = config.bufferLocation;
+const buffer = new Buffer(1024 * config.bufferSize);
+const bufferSize = config.bufferSize;
+
 /**
  * module description
  * @module Bench
@@ -49,11 +53,22 @@ class Bench {
      */
 
     async writeDataPublic(key, value) {
-        let returnValue = await connector
-            .submit(["writeData", key.toString(), value.toString()])
-            .catch(err => {
-                return Promise.reject(err);
-            });
+        if (bufferLocation == "peer") {
+            var returnValue = await connector
+                .submit(["writePeerBuffer", key.toString(), bufferSize])
+                .catch(err => {
+                    return Promise.reject(err);
+                });
+        } else {
+            if (bufferLocation == "client") {
+                value = buffer;
+            }
+            var returnValue = await connector
+                .submit(["writeData", key.toString(), value.toString()])
+                .catch(err => {
+                    return Promise.reject(err);
+                });
+        }
         return Promise.resolve(returnValue);
     }
 
@@ -102,14 +117,21 @@ class Bench {
     async readDataPrivate(key) {
         if (typeof collection == String) {
             var returnValue = await connector
-                .query(["readDataPrivate", collection.toString(), key.toString()])
+                .query([
+                    "readDataPrivate",
+                    collection.toString(),
+                    key.toString()
+                ])
                 .catch(err => {
                     return Promise.reject(err);
                 });
-        }
-        else {
+        } else {
             var returnValue = await connector
-                .query(["readDataPrivateImplicit",collection.toString(), key.toString()])
+                .query([
+                    "readDataPrivateImplicit",
+                    collection.toString(),
+                    key.toString()
+                ])
                 .catch(err => {
                     return Promise.reject(err);
                 });
@@ -147,6 +169,7 @@ class Bench {
         let returnValue = await connector
             .submit([
                 "writeMuchDataPrivate",
+                collection.toString(),
                 len.toString(),
                 start.toString(),
                 delta.toString()
