@@ -23,9 +23,9 @@ const userName = config.userName;
 const connector = require(__dirname + "/connector");
 const collection = config.collection;
 
-const bufferLocation = config.bufferLocation;
+/* const bufferLocation = config.bufferLocation;
 const buffer = new Buffer(1024 * config.bufferSize);
-const bufferSize = config.bufferSize;
+const bufferSize = config.bufferSize; */
 
 /**
  * module description
@@ -53,18 +53,22 @@ class Bench {
      */
 
     async writeDataPublic(key, value) {
-        if (bufferLocation == "peer") {
+        var returnValue = await connector.submit(["writeData", key.toString(), value.toString()]).catch(err => {
+            return Promise.reject(err);
+        });
+        return Promise.resolve(returnValue);
+    }
+
+    async writeDataPrivate(key, value) {
+        if (typeof collection == "string") {
             var returnValue = await connector
-                .submit(["writePeerBuffer", key.toString(), bufferSize])
+                .submit(["writeDataPrivate", collection.toString(), key.toString(), value.toString()])
                 .catch(err => {
                     return Promise.reject(err);
                 });
         } else {
-            if (bufferLocation == "client") {
-                value = buffer;
-            }
             var returnValue = await connector
-                .submit(["writeData", key.toString(), value.toString()])
+                .submit(["writeDataPrivateImplicit", collection.toString(), key.toString(), value.toString()])
                 .catch(err => {
                     return Promise.reject(err);
                 });
@@ -72,30 +76,37 @@ class Bench {
         return Promise.resolve(returnValue);
     }
 
-    async writeDataPrivate(key, value) {
-        if (typeof collection == "string") {
-            var returnValue = await connector
-                .submit([
-                    "writeDataPrivate",
-                    collection.toString(),
-                    key.toString(),
-                    value.toString()
-                ])
-                .catch(err => {
-                    return Promise.reject(err);
-                });
-        } else {
-            var returnValue = await connector
-                .submit([
-                    "writeDataPrivateImplicit",
-                    collection.toString(),
-                    key.toString(),
-                    value.toString()
-                ])
-                .catch(err => {
-                    return Promise.reject(err);
-                });
-        }
+    async writeDataPublicBufferClient(key, value) {
+        const buffer = new Buffer(1024 * value);
+        var returnValue = await connector.submit(["writeData", key.toString(), buffer.toString()]).catch(err => {
+            return Promise.reject(err);
+        });
+        return Promise.resolve(returnValue);
+    }
+
+    async writeDataPrivateBufferClient(key, value) {
+        const buffer = new Buffer(1024 * value);
+        var returnValue = await connector
+            .submit(["writeDataPrivate", collection.toString(), key.toString(), buffer.toString()])
+            .catch(err => {
+                return Promise.reject(err);
+            });
+        return Promise.resolve(returnValue);
+    }
+
+    async writeDataPublicBufferPeer(key, value) {
+        var returnValue = await connector.submit(["writeDataPublicBufferPeer", key.toString(), value.toString()]).catch(err => {
+            return Promise.reject(err);
+        });
+        return Promise.resolve(returnValue);
+    }
+
+    async writeDataPrivateBufferPeer(key, value) {
+        var returnValue = await connector
+            .submit(["writeDataPrivateBufferPeer", collection.toString(), key.toString(), value.toString()])
+            .catch(err => {
+                return Promise.reject(err);
+            });
         return Promise.resolve(returnValue);
     }
 
@@ -106,35 +117,21 @@ class Bench {
      */
 
     async readDataPublic(key) {
-        let returnValue = await connector
-            .query(["readData", key.toString()])
-            .catch(err => {
-                return Promise.reject(err);
-            });
+        let returnValue = await connector.query(["readData", key.toString()]).catch(err => {
+            return Promise.reject(err);
+        });
         return Promise.resolve(returnValue);
     }
 
     async readDataPrivate(key) {
         if (typeof collection == String) {
-            var returnValue = await connector
-                .query([
-                    "readDataPrivate",
-                    collection.toString(),
-                    key.toString()
-                ])
-                .catch(err => {
-                    return Promise.reject(err);
-                });
+            var returnValue = await connector.query(["readDataPrivate", collection.toString(), key.toString()]).catch(err => {
+                return Promise.reject(err);
+            });
         } else {
-            var returnValue = await connector
-                .query([
-                    "readDataPrivateImplicit",
-                    collection.toString(),
-                    key.toString()
-                ])
-                .catch(err => {
-                    return Promise.reject(err);
-                });
+            var returnValue = await connector.query(["readDataPrivateImplicit", collection.toString(), key.toString()]).catch(err => {
+                return Promise.reject(err);
+            });
         }
         return Promise.resolve(returnValue);
     }
@@ -145,21 +142,11 @@ class Bench {
      */
 
     async writeMuchDataPublic(len, start, delta) {
-        let returnValue = await connector
-            .submit([
-                "writeMuchData",
-                len.toString(),
-                start.toString(),
-                delta.toString()
-            ])
-            .catch(err => {
-                return Promise.reject(err);
-            });
+        let returnValue = await connector.submit(["writeMuchData", len.toString(), start.toString(), delta.toString()]).catch(err => {
+            return Promise.reject(err);
+        });
         console.log("returnValue" + returnValue);
-        if (
-            returnValue ==
-            "Cannot read property 'submitTransaction' of undefined"
-        ) {
+        if (returnValue == "Cannot read property 'submitTransaction' of undefined") {
             return Promise.reject("-1");
         }
         return Promise.resolve(returnValue);
@@ -167,13 +154,7 @@ class Bench {
 
     async writeMuchDataPrivate(len, start, delta) {
         let returnValue = await connector
-            .submit([
-                "writeMuchDataPrivate",
-                collection.toString(),
-                len.toString(),
-                start.toString(),
-                delta.toString()
-            ])
+            .submit(["writeMuchDataPrivate", collection.toString(), len.toString(), start.toString(), delta.toString()])
             .catch(err => {
                 return Promise.reject(err);
             });
@@ -185,22 +166,15 @@ class Bench {
      * @params start, end
      */
     async readMuchDataPublic(len, start) {
-        let returnValue = await connector
-            .query(["readMuchData", len.toString(), start.toString()])
-            .catch(err => {
-                return Promise.reject(err);
-            });
+        let returnValue = await connector.query(["readMuchData", len.toString(), start.toString()]).catch(err => {
+            return Promise.reject(err);
+        });
         return Promise.resolve(returnValue);
     }
 
     async readMuchDataPrivate(len, start) {
         let returnValue = await connector
-            .query([
-                "readMuchDataPrivate",
-                len.toString(),
-                start.toString(),
-                collection.toString()
-            ])
+            .query(["readMuchDataPrivate", collection.toString(), len.toString(), start.toString()])
             .catch(err => {
                 return Promise.reject(err);
             });
@@ -248,56 +222,44 @@ class Bench {
      * @param array of public keys for private transactions
      */
     async queryMatrixMultiplicationPublic(value) {
-        let returnValue = await connector
-            .query(["matrixMultiplication", value.toString()])
-            .catch(err => {
-                return Promise.reject(err);
-            });
+        let returnValue = await connector.query(["matrixMultiplication", value.toString()]).catch(err => {
+            return Promise.reject(err);
+        });
         return Promise.resolve(returnValue);
     }
 
     async queryMatrixMultiplicationPrivate(value) {
-        let returnValue = await connector
-            .query(["matrixMultiplication", value.toString()])
-            .catch(err => {
-                return Promise.reject(err);
-            });
+        let returnValue = await connector.query(["matrixMultiplication", value.toString()]).catch(err => {
+            return Promise.reject(err);
+        });
         return Promise.resolve(returnValue);
     }
 
     async invokeMatrixMultiplicationPublic(value) {
-        let returnValue = await connector
-            .submit(["matrixMultiplication", value.toString()])
-            .catch(err => {
-                return Promise.reject(err);
-            });
+        let returnValue = await connector.submit(["matrixMultiplication", value.toString()]).catch(err => {
+            return Promise.reject(err);
+        });
         return Promise.resolve(returnValue);
     }
 
     async invokeMatrixMultiplicationPrivate(value) {
-        let returnValue = await connector
-            .submit(["matrixMultiplication", value.toString()])
-            .catch(err => {
-                return Promise.reject(err);
-            });
+        let returnValue = await connector.submit(["matrixMultiplication", value.toString()]).catch(err => {
+            return Promise.reject(err);
+        });
         return Promise.resolve(returnValue);
     }
 
     async setMatrixMultiplicationPublic(value) {
-        let returnValue = await connector
-            .submit(["setMatrixMultiplication", value.toString()])
-            .catch(err => {
-                return Promise.reject(err);
-            });
+        let returnValue = await connector.submit(["setMatrixMultiplication", value.toString()]).catch(err => {
+            return Promise.reject(err);
+        });
         return Promise.resolve(returnValue);
     }
 
     async setMatrixMultiplicationPrivate(value) {
-        let returnValue = await connector
-            .submit(["setMatrixMultiplication", value.toString()])
-            .catch(err => {
-                return Promise.reject(err);
-            });
+        let returnValue = await connector.submit(["setMatrixMultiplication", value.toString()]).catch(err => {
+            return Promise.reject(err);
+        });
         return Promise.resolve(returnValue);
     }
 }

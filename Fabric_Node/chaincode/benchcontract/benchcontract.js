@@ -71,34 +71,27 @@ class BenchContract extends Contract {
     }
 
     async writeDataPrivate(ctx, name, key, value) {
-        await ctx.stub.putPrivateData(
-            name,
-            "key_" + key,
-            Buffer.from("value_" + value)
-        );
+        await ctx.stub.putPrivateData(name, "key_" + key, Buffer.from("value_" + value));
         return Buffer.from("2");
     }
 
-    async writePeerBuffer(ctx, key, bufferSize) {
+    async writeDataPublicBufferPeer(ctx, key, bufferSize) {
         const buffer = new Buffer(1024 * bufferSize);
-        await ctx.stub.putState(
-            "key_" + key,
-            Buffer.from("value_" + buffer.toString())
-        );
+        await ctx.stub.putState("key_" + key, Buffer.from("value_" + buffer.toString()));
         return Buffer.from("1");
+    }
+
+    async writeDataPrivateBufferPeer(ctx, name, key, bufferSize) {
+        const buffer = new Buffer(1024 * bufferSize);
+        await ctx.stub.putPrivateData(name, "key_" + key, Buffer.from("value_" + buffer.toString()));
+        return Buffer.from("2");
     }
 
     async writeDataPrivateImplicit(ctx, name, key, value) {
         var collectionArray = name.split(",");
         var promiseArray = [];
         collectionArray.forEach(element => {
-            promiseArray.push(
-                ctx.stub.putPrivateData(
-                    element,
-                    key.toString(),
-                    Buffer.from(value)
-                )
-            );
+            promiseArray.push(ctx.stub.putPrivateData(element, key.toString(), Buffer.from(value)));
         });
         await Promise.all(collectionArray);
         return Buffer.from("2");
@@ -115,7 +108,7 @@ class BenchContract extends Contract {
     }
 
     async readDataPrivate(ctx, name, key) {
-        var tmp = await ctx.stub.getPrivateState(name, "key_" + key);
+        var tmp = await ctx.stub.getPrivateData(name, "key_" + key);
         return Buffer.from(tmp.toString());
     }
 
@@ -128,17 +121,8 @@ class BenchContract extends Contract {
 
     async writeMuchData(ctx, len, start, delta) {
         var promiseArray = [];
-        for (
-            var i = parseInt(start, 10);
-            i < parseInt(start, 10) + parseInt(len, 10);
-            i++
-        ) {
-            promiseArray.push(
-                ctx.stub.putState(
-                    "key_" + i.toString(),
-                    Buffer.from((parseInt(delta, 10) + i).toString())
-                )
-            );
+        for (var i = parseInt(start, 10); i < parseInt(start, 10) + parseInt(len, 10); i++) {
+            promiseArray.push(ctx.stub.putState("key_" + i.toString(), Buffer.from((parseInt(delta, 10) + i).toString())));
         }
         await Promise.all(promiseArray);
         return Buffer.from("1");
@@ -146,21 +130,11 @@ class BenchContract extends Contract {
 
     async writeMuchDataPrivate(ctx, name, len, start, delta) {
         var promiseArray = [];
-        for (
-            var i = parseInt(start, 10);
-            i < parseInt(start, 10) + parseInt(len, 10);
-            i++
-        ) {
-            promiseArray.push(
-                ctx.stub.putPrivateData(
-                    name,
-                    "key_" + i.toString(),
-                    Buffer.from((parseInt(delta, 10) + i).toString())
-                )
-            );
+        for (var i = parseInt(start, 10); i < parseInt(start, 10) + parseInt(len, 10); i++) {
+            promiseArray.push(ctx.stub.putPrivateData(name, "key_" + i.toString(), Buffer.from((parseInt(delta, 10) + i).toString())));
         }
         await Promise.all(promiseArray);
-        return Buffer.from("1");
+        return Buffer.from("2");
     }
 
     async writeMuchData2(ctx, len, start, delta) {
@@ -169,10 +143,7 @@ class BenchContract extends Contract {
             aggregate_key["key_" + i.toString()] = (i + delta).toString();
         }
         console.log(JSON.stringify(aggregate_key));
-        await ctx.stub.putState(
-            "key_" + start.toString(),
-            Buffer.from(JSON.stringify(aggregate_key))
-        );
+        await ctx.stub.putState("key_" + start.toString(), Buffer.from(JSON.stringify(aggregate_key)));
         return Buffer.from("1");
     }
 
@@ -184,18 +155,28 @@ class BenchContract extends Contract {
     async readMuchData(ctx, len, start) {
         var promiseArray = [];
         var sum = 0;
-        for (
-            var i = parseInt(start, 10);
-            i < parseInt(start, 10) + parseInt(len, 10);
-            i++
-        ) {
-            promiseArray.push(ctx.stub.getState("key_" + i.toString()));
-            //console.log(sum)
+        for (var i = parseInt(start, 10); i < parseInt(start, 10) + parseInt(len, 10); i++) {
+            promiseArray.push(
+                ctx.stub.getState("key_" + i.toString()).then(res => {
+                    sum += res;
+                })
+            );
         }
-        await Promise.all(promiseArray)
-        promiseArray.forEach(element => {
-            sum += await element;
-        });
+        await Promise.all(promiseArray);
+        return Buffer.from(sum.toString());
+    }
+
+    async readMuchDataPrivate(ctx, name, len, start) {
+        var promiseArray = [];
+        var sum = 0;
+        for (var i = parseInt(start, 10); i < parseInt(start, 10) + parseInt(len, 10); i++) {
+            promiseArray.push(
+                ctx.stub.getPrivateData(name, "key_" + i.toString()).then(res => {
+                    sum += res;
+                })
+            );
+        }
+        await Promise.all(promiseArray);
         return Buffer.from(sum.toString());
     }
 
