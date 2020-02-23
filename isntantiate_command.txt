@@ -1,0 +1,1 @@
+peer chaincode $ACTION -n benchcontract -l node -c '{"Args":["org.bench.benchcontract:instantiate","10000"]}' -C mychannel -P "OR ('Org1MSP.member')" -v $VERSION --tls
