@@ -57,13 +57,13 @@ class BenchContract extends Contract {
         // No implementation required with this example
         // It could be where data migration is performed, if necessary
         console.log("Instantiate the contract");
-        console.log(len)
-         var promiseArray = [];
+        console.log(len);
+        var promiseArray = [];
         for (var i = parseInt(0, 10); i < parseInt(len, 10); i++) {
-            promiseArray.push(ctx.stub.putState("key_" + i.toString(), Buffer.from(JSON.stringify({"value": i}))));
+            promiseArray.push(ctx.stub.putState("key_" + i.toString(), Buffer.from(JSON.stringify({ value: i }))));
         }
         await Promise.all(promiseArray);
-        return Buffer.from("1"); 
+        return Buffer.from("1");
     }
 
     /** Standard setters and getters
@@ -83,13 +83,13 @@ class BenchContract extends Contract {
     }
 
     async writeDataPublicBufferPeer(ctx, key, bufferSize) {
-        const buffer = new Buffer(1024 * bufferSize);
+        const buffer = new Buffer(Number(bufferSize));
         await ctx.stub.putState("key_" + key, Buffer.from("value_" + buffer.toString()));
         return Buffer.from("1");
     }
 
     async writeDataPrivateBufferPeer(ctx, name, key, bufferSize) {
-        const buffer = new Buffer(1024 * bufferSize);
+        const buffer = new Buffer(Number(bufferSize));
         await ctx.stub.putPrivateData(name, "key_" + key, Buffer.from("value_" + buffer.toString()));
         return Buffer.from("2");
     }
@@ -111,7 +111,7 @@ class BenchContract extends Contract {
 
     async readData(ctx, key) {
         var tmp = await ctx.stub.getState("key_" + key);
-        console.log(tmp)
+        console.log(tmp);
         return Buffer.from(tmp.toString());
     }
 
@@ -265,6 +265,78 @@ class BenchContract extends Contract {
         var res = await this.matrixMultiplication(ctx, n);
         await ctx.stub.putState("tmp", res.toString());
         return Buffer.from(res.toString());
+    }
+
+    async complexQuery(ctx, value) {
+        const allResults = [];
+        var query = {
+            selector: {
+                value: {
+                    $eq: Number(value)
+                }
+            }
+        };
+        var iterator = await ctx.stub.getQueryResult(JSON.stringify(query));
+        while (true) {
+            const res = await iterator.next();
+            if (res.value) {
+                // if not a getHistoryForKey iterator then key is contained in res.value.key
+                allResults.push(res.value.value.toString("utf8"));
+            }
+
+            // check to see if we have reached then end
+            if (res.done) {
+                // explicitly close the iterator
+                await iterator.close();
+                return Buffer.from(allResults.toString());
+            }
+        }
+    }
+
+    async complexQueryPrivate(ctx, name, value) {
+        const allResults = [];
+        var query = {
+            selector: {
+                value: {
+                    $eq: Number(value)
+                }
+            }
+        };
+        var iterator = await ctx.stub.getPrivateDataQueryResult(name, JSON.stringify(query));
+        while (true) {
+            const res = await iterator.next();
+            if (res.value) {
+                // if not a getHistoryForKey iterator then key is contained in res.value.key
+                allResults.push(res.value.value.toString("utf8"));
+            }
+
+            // check to see if we have reached then end
+            if (res.done) {
+                // explicitly close the iterator
+                await iterator.close();
+                return Buffer.from(allResults.toString());
+            }
+        }
+    }
+
+    async ccQuery(ctx, value) {
+        const allResults = [];
+        var iterator = await ctx.stub.getStateByRange("0", value);
+        while (true) {
+            const res = await iterator.next();
+            if (res.value) {
+                // if not a getHistoryForKey iterator then key is contained in res.value.key
+                allResults.push(res.value.value.toString("utf8"));
+                console.log(res.value.value.toString("utf8"))
+            }
+
+            // check to see if we have reached then end
+            if (res.done) {
+                // explicitly close the iterator
+                await iterator.close();
+                return Buffer.from(allResults.toString());
+            }
+        }
     }
 }
 

@@ -77,7 +77,7 @@ class Bench {
     }
 
     async writeDataPublicBufferClient(key, value) {
-        const buffer = new Buffer(1024 * value);
+        const buffer = new Buffer(Number(value));
         var returnValue = await connector.submit(["writeData", key.toString(), buffer.toString()]).catch(err => {
             return Promise.reject(err);
         });
@@ -85,7 +85,7 @@ class Bench {
     }
 
     async writeDataPrivateBufferClient(key, value) {
-        const buffer = new Buffer(1024 * value);
+        const buffer = new Buffer(Number(value));
         var returnValue = await connector
             .submit(["writeDataPrivate", collection.toString(), key.toString(), buffer.toString()])
             .catch(err => {
@@ -262,6 +262,29 @@ class Bench {
         });
         return Promise.resolve(returnValue);
     }
+
+    async complexQueryPublic(value) {
+        let returnValue = await connector.query(["complexQuery", value.toString()]).catch(err => {
+            return Promise.reject(err);
+        });
+        return Promise.resolve(returnValue);
+    }
+
+    async complexQueryPrivate(value) {
+        let returnValue = await connector.query(["complexQueryPrivate", collection.toString(), value.toString()]).catch(err => {
+            return Promise.reject(err);
+        });
+        return Promise.resolve(returnValue);
+    }
+
+    async ccQueryPublice(value) {
+        let returnValue = await connector.query(["ccQuery", value.toString()]).catch(err => {
+            return Promise.reject(err);
+        });
+        return Promise.resolve(returnValue);
+    }
+
+
 }
 
 module.exports = Bench;

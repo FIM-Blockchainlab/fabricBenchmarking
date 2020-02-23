@@ -22,7 +22,7 @@ async function test(){
     //initializing the contracts
     await bench.init().catch(err => {console.log(err)})
 
-    result = await bench.readDataPublic("2")
+    result = await bench.ccQueryPublice("")
     console.log(result)
     process.exit()
 
