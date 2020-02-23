@@ -319,24 +319,23 @@ class BenchContract extends Contract {
         }
     }
 
-    async ccQuery(ctx, value) {
+    async ccQuery(ctx, from, to) {
+        const startKey = from;
+        const endKey = to;
         const allResults = [];
-        var iterator = await ctx.stub.getStateByRange("0", value);
-        while (true) {
-            const res = await iterator.next();
-            if (res.value) {
-                // if not a getHistoryForKey iterator then key is contained in res.value.key
-                allResults.push(res.value.value.toString("utf8"));
-                console.log(res.value.value.toString("utf8"))
+        for await (const {key, value} of ctx.stub.getStateByRange(startKey, endKey)) {
+            const strValue = Buffer.from(value).toString('utf8');
+            let record;
+            try {
+                record = JSON.parse(strValue);
+            } catch (err) {
+                console.log(err);
+                record = strValue;
             }
-
-            // check to see if we have reached then end
-            if (res.done) {
-                // explicitly close the iterator
-                await iterator.close();
-                return Buffer.from(allResults.toString());
-            }
+            allResults.push({ Key: key, Record: record });
         }
+        console.info(allResults);
+        return Buffer.from(allResults.length.toString());
     }
 }
 

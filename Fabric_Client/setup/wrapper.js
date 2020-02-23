@@ -277,8 +277,8 @@ class Bench {
         return Promise.resolve(returnValue);
     }
 
-    async ccQueryPublice(value) {
-        let returnValue = await connector.query(["ccQuery", value.toString()]).catch(err => {
+    async ccQueryPublice(from, to) {
+        let returnValue = await connector.query(["ccQuery", from.toString(), to.toString()]).catch(err => {
             return Promise.reject(err);
         });
         return Promise.resolve(returnValue);
