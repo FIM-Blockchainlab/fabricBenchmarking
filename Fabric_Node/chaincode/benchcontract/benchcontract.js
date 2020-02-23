@@ -53,10 +53,17 @@ class BenchContract extends Contract {
      * Instantiate to perform any setup of the ledger that might be required.
      * @param {Context} ctx the transaction context
      */
-    async instantiate(ctx) {
+    async instantiate(ctx, len) {
         // No implementation required with this example
         // It could be where data migration is performed, if necessary
         console.log("Instantiate the contract");
+        console.log(len)
+         var promiseArray = [];
+        for (var i = parseInt(0, 10); i < parseInt(len, 10); i++) {
+            promiseArray.push(ctx.stub.putState("key_" + i.toString(), Buffer.from(JSON.stringify({"value": i}))));
+        }
+        await Promise.all(promiseArray);
+        return Buffer.from("1"); 
     }
 
     /** Standard setters and getters
@@ -104,6 +111,7 @@ class BenchContract extends Contract {
 
     async readData(ctx, key) {
         var tmp = await ctx.stub.getState("key_" + key);
+        console.log(tmp)
         return Buffer.from(tmp.toString());
     }
 
