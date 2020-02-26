@@ -314,7 +314,6 @@ class BenchContract extends Contract {
             }
             filteredResults.push({ Key: key, Record: record });
         }
-        console.log(filteredResults);
         return Buffer.from(filteredResults.length.toString());
     }
 
@@ -332,11 +331,9 @@ class BenchContract extends Contract {
             }
             allResults.push({ Key: key, Record: record });
         }
-        console.log(allResults);
         var filteredResults = allResults.filter(res => {
             return res.Record.value == value;
         });
-        console.log(filteredResults);
         return Buffer.from(filteredResults.length.toString());
     }
 
@@ -354,11 +351,9 @@ class BenchContract extends Contract {
             }
             allResults.push({ Key: key, Record: record });
         }
-        console.log(allResults);
         var filteredResults = allResults.filter(res => {
             return res.Record.value == value;
         });
-        console.log(filteredResults);
         return Buffer.from(filteredResults.length.toString());
     }
 }
